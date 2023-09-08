@@ -1,0 +1,219 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+using namespace std;
+
+const int maximum_books_limit = 100; //Limit of Books in library is 100
+const string library_data_file = "e:/library_management_file_handling.txt"; // Use a constant for the file name
+
+// Define a class to represent a book
+class Book {
+public:
+    int book_id;            //Variables Decleration 
+    string title;
+    string author;
+    bool is_available;     //Boolearn Decleration
+    string borrower_name;
+
+    Book():book_id(0),title(""), author(""),is_available(false) {  // Default constructor
+	
+	}
+
+    Book(int book_id,string title,string author,bool is_available)  // Parameterized constructor
+        : book_id(book_id), title(title), author(author), is_available(true) {
+		
+		}
+};
+
+class Library {            // Define a class to represent a library
+protected:
+    Book books[maximum_books_limit];
+    int book_count=0;
+    ofstream file;       // Output file stream for saving book data
+
+public:
+    Library() {  //Constructor
+        file.open( "e:/library_management_file_handling.txt",ios::app);   // Open the file for appending
+        if(!file) {
+            cout<<"Error opening file." <<endl;
+        }
+    }
+
+    ~Library() {    // Destructor
+        file.close();
+    }
+
+    void add_book() {   // Function to add a book to the library
+        if (book_count< maximum_books_limit) {
+            int book_id;
+            string title, author;
+
+            cout<<"Enter Book ID: ";
+            cin>>book_id;        //User Input of Book ID
+            cout<<"Enter Title: ";
+            cin.ignore();        
+            getline(cin, title);///User Input of Book Title
+            cout<<"Enter Author: ";
+            getline(cin, author);   //User Input of Book Author
+
+
+            Book book(book_id,title,author,true);  // By default, a newly added book should be available
+            books[book_count]=book;
+            book_count++;
+
+            file<<"Book id: "<<book_id<<"\nTitle of Book: "<<title <<  // Write the book to the file
+			"\nAuthor of the Book: "<<author<<"\n";
+
+            cout<<"Book added to the library."<<endl;   //Output on the Console
+        }
+		else {
+            cout<<"Library is full. Cannot add more books."<<endl;  
+        }
+    }
+
+    void load_books() {    // Function to load book data from a file
+        ifstream file("e:/library_management_file_handling.txt");
+        if (file.is_open()) {
+            string line;
+            while (getline(file, line)) {
+                stringstream ss(line);
+                int book_id;
+                string title, author;
+                bool is_available;
+
+                ss>>book_id;
+                getline(ss,title,',');
+                getline(ss,author,',');
+                ss>>is_available;
+
+                Book book(book_id,title,author,is_available);
+                books[book_count]=book;
+                book_count++;
+            }
+            file.close();
+        }
+		else {
+            cout<<"Error: Unable to open the file for reading."<<endl;
+        }
+    }
+
+    void save_books() {   // Function to save book data to a file
+        ofstream file("e:/library_management_file_handling.txt");
+        if (file.is_open()) {
+            for (int i=0;i<book_count;i++) {
+                file<<books[i].book_id<<","<<books[i].title<<","<<books[i].author
+				<<","<<books[i].is_available<<"\n";
+            }
+            file.close();
+        } 
+		else {
+            cout<<"Error: Unable to open the file for writing."<<endl;
+        }
+    }
+    void view_books() {  // Function to view the list of books in the library
+        for (int i=0;i<book_count;i++) {
+            const Book& book = books[i];
+            cout<<"--------------------------------------------------------------------"<<endl;
+            cout<<"List of Books in Library: "<<endl;  //Output
+            cout<<"Book ID: "<<book.book_id<<endl;
+            cout<<"Title: "<<book.title<<endl;
+            cout<<"Author: "<<book.author<<endl;
+            cout<<"Availability: "<< (book.is_available ? "Available" : "Not Available")<<endl; 
+            cout<<"--------------------------------------------------------------------"<<endl;
+        }
+    }
+
+    void borrow_book() {  // Function to borrow a book from the library
+        int book_id;
+        string borrower_name;
+
+        cout<<"Enter Your Name: ";
+        cin>>borrower_name;   //User Input of Borrowers name
+        cout<<"Enter Book ID to Borrow: ";
+        cin>>book_id;        //User Input of Book ID
+
+        for (int i=0;i<book_count;i++) {
+            if (books[i].book_id==book_id) {
+                if (books[i].is_available) {
+                    books[i].is_available=false;
+                    books[i].borrower_name=borrower_name; // Record of borrower's name
+                    cout<<"Book borrowed successfully."<<endl;
+                    return;
+                } else {
+                    cout<<"Book is not available for borrowing."<<endl;
+                    return;
+                }
+            }
+        }
+        cout<<"Book not found."<<endl;
+    }
+
+    void return_book() {  // Function to return a book to the library
+        int book_id;
+        string borrower_name;
+
+        cout<<"Enter Your Name: ";
+        cin>>borrower_name;   //User Input of Borrowers name
+        cout<<"Enter Book ID to Return: ";
+        cin>>book_id;       //User Input of Book ID for return
+
+        for (int i=0;i<book_count;i++) {
+            if (books[i].book_id==book_id) {
+                if (!books[i].is_available && books[i].borrower_name == borrower_name) {
+                    books[i].is_available = true;
+                    books[i].borrower_name = ""; // Clear borrower's name
+                    cout<<"Book returned successfully."<<endl;
+                    return;
+                }
+				else {
+                    cout<<"Book cannot be returned. It's not borrowed by you ."<<endl;
+                    return;
+                }
+            }
+        }
+        cout<<"Book not found."<<endl;
+    }
+};
+
+class LibraryManagement:public Library {   // Define a class for Library Management
+public:
+    void run() {
+        int choice;
+        do {
+            cout<<"\n__________*****Library Management System*****__________\n"<<"\n";
+            cout<<"1. Add Book to Library\n";
+            cout<<"2. View Books present in Library\n";
+            cout<<"3. Borrow Books from Library\n";
+            cout<<"4. Return Book to Library\n";
+            cout<<"0. Exit\n"<<"\n";
+            cout<<"Enter your choice: ";
+            cin>>choice;
+
+            switch (choice) {
+                case 1:
+                    add_book();
+                    break;
+                case 2:
+                    view_books();
+                    break;
+                case 3:
+                    borrow_book();
+                    break;
+                case 4:
+                    return_book();
+                    break;
+                case 0:
+                    cout<<"Exiting program."<<endl;
+                    break;
+                default:
+                    cout<<"Invalid choice. Please enter a valid option."<<endl;
+            }
+        } while(choice != 0);
+    }
+};
+
+int main() {
+    LibraryManagement library_system;
+    library_system.run();
+    return 0;
+}
